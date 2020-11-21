@@ -1,11 +1,11 @@
-name: Build, Install Pods, and Run Unit Tests
+name: iOS CI workflow
 
 on: pull_request
 
 jobs:
 
   build:
-    
+    name: Build, Install Pods, and Run Unit Tests
     env:
       SCHEME: "BoostRunClub"
       DEVICE: "iPhone 12"
@@ -27,15 +27,15 @@ jobs:
     - name: Build 
       run: |
         set -eo pipefail && xcodebuild build-for-testing \
-                             -workspace $WORKSPACE \
                              -scheme $SCHEME \
+                             -workspace $WORKSPACE \
                              -destination "platform=iOS Simulator,name=$DEVICE" | 
                              xcpretty --color --simple
 
     - name: Run unit tests
       run: |
         set -o pipefail && xcodebuild test-without-building \
-                            -workspace $WORKSPACE
-                            -scheme $SCHEME
+                            -scheme $SCHEME \
+                            -workspace $WORKSPACE \
                             -destination "platform=iOS Simulator,name=$DEVICE" | 
                             xcpretty --color --simple
