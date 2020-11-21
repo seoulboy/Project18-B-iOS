@@ -1,12 +1,10 @@
-name: workflow1
+name: Build, Install Pods, and Run Unit Tests
 
 on: pull_request
-
 
 jobs:
 
   build:
-    name: Build for testing
     
     env:
       SCHEME: "BoostRunClub"
@@ -37,6 +35,7 @@ jobs:
     - name: Run unit tests
       run: |
         set -o pipefail && xcodebuild test-without-building \
-                            -xctestrun $(find . -type f -name "*.xctestrun") \
+                            -workspace $WORKSPACE
+                            -scheme $SCHEME
                             -destination "platform=iOS Simulator,name=$DEVICE" | 
                             xcpretty --color --simple
