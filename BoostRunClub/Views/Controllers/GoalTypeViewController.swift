@@ -27,8 +27,26 @@ final class GoalTypeViewController: UIViewController {
         viewModel = goalTypeViewModel
     }
 
-    // TODO: goalTypeViewModel에서 선택되어져 있는 값에 체크마크
-    private func bindViewModel() {}
+    private func bindViewModel() {
+        guard let viewModel = viewModel else { return }
+
+        viewModel.outputs.goalTypeObservable
+            .receive(on: RunLoop.main)
+            .sink { [weak self] goalType in
+                self?.tableViewCells.forEach {
+                    if goalType == .none {
+                        $0.setStyle(with: .black)
+                    } else {
+                        $0.setStyle(with: goalType == $0.goalType ? .checked : .gray)
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    deinit {
+        print("[Memory \(Date())] 🍎ViewController🍏 \(Self.self) deallocated.")
+    }
 }
 
 // MARK: - ViewController LifeCycle
@@ -53,11 +71,9 @@ extension GoalTypeViewController {
             delay: 0,
             options: .curveEaseInOut,
             animations: {
-                [weak self] in
-                guard let self = self else { return }
                 self.tableView.frame.origin.y = UIScreen.main.bounds.height - self.tableViewHeight
                 self.tableView.bounds.origin.y = 0
-                self.view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+                self.view.backgroundColor = UIColor.darkGray.withAlphaComponent(0.8)
             },
             completion: nil
         )
@@ -84,8 +100,7 @@ extension GoalTypeViewController {
             withDuration: 0.4,
             delay: 0,
             options: .curveEaseInOut,
-            animations: { [weak self] in
-                guard let self = self else { return }
+            animations: {
                 self.tableView.frame.origin.y = UIScreen.main.bounds.height
                 self.view.backgroundColor = UIColor.black.withAlphaComponent(0)
             },
@@ -123,7 +138,7 @@ extension GoalTypeViewController {
         let size = CGSize(width: UIScreen.main.bounds.width, height: tableViewHeight)
         let origin = CGPoint(x: 0, y: UIScreen.main.bounds.height)
         let tableView = UITableView(frame: CGRect(origin: origin, size: size), style: .plain)
-        tableView.layer.backgroundColor = UIColor.tertiarySystemBackground.cgColor
+        tableView.layer.masksToBounds = true
         tableView.delegate = self
         tableView.dataSource = self
         tableView.estimatedRowHeight = 1
@@ -132,8 +147,8 @@ extension GoalTypeViewController {
         tableView.isScrollEnabled = false
         tableView.register(GoalTypeCell.self, forCellReuseIdentifier: String(describing: GoalTypeCell.self))
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-        tableView.layer.cornerRadius = 30
-        tableView.rowHeight = GoalTypeCell.cellHeight
+        tableView.layer.cornerRadius = 25
+        tableView.rowHeight = GoalTypeCell.LayoutConstant.cellHeight
         let header = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: verticalTablePadding))
         let footer = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: verticalTablePadding * 2))
         let clearButton = UIButton()
@@ -156,6 +171,6 @@ extension GoalTypeViewController {
     private var verticalTablePadding: CGFloat { 30 }
 
     private var tableViewHeight: CGFloat {
-        CGFloat(tableViewCells.count) * GoalTypeCell.cellHeight + verticalTablePadding * 3
+        CGFloat(tableViewCells.count) * GoalTypeCell.LayoutConstant.cellHeight + verticalTablePadding * 3
     }
 }

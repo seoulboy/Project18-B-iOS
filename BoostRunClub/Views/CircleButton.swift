@@ -7,38 +7,12 @@
 
 import UIKit
 
-enum ButtonStyle {
-    case start, stop, pause, resume
-
-    var backgroundColor: UIColor {
-        switch self {
-        case .start:
-            return #colorLiteral(red: 0.9763557315, green: 0.9324046969, blue: 0, alpha: 1)
-        case .stop:
-            return .label
-        case .pause:
-            return .label
-        case .resume:
-            return #colorLiteral(red: 0.9763557315, green: 0.9324046969, blue: 0, alpha: 1)
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .start:
-            return "시작"
-        case .stop:
-            return ""
-        case .pause:
-            return ""
-        case .resume:
-            return ""
-        }
-    }
-}
-
 class CircleButton: UIButton {
-    init(with buttonStyle: ButtonStyle) {
+    enum Style {
+        case start, stop, pause, resume, locate, exit
+    }
+
+    init(with buttonStyle: Style) {
         super.init(frame: .zero)
         commonInit(with: buttonStyle)
     }
@@ -48,22 +22,31 @@ class CircleButton: UIButton {
         commonInit()
     }
 
-    private func commonInit(with buttonStyle: ButtonStyle = .start) {
+    private func commonInit(with buttonStyle: Style = .start) {
+        setTitleColor(.label, for: .normal)
+        titleLabel?.font = UIFont.boldSystemFont(ofSize: 25)
+        imageView?.contentMode = .scaleAspectFill
+
         switch buttonStyle {
         case .start:
-            backgroundColor = #colorLiteral(red: 0.9763557315, green: 0.9324046969, blue: 0, alpha: 1)
+            backgroundColor = UIColor(named: "accent")
             setTitle("시작", for: .normal)
+            setTitleColor(UIColor(named: "accent2"), for: .normal)
         case .stop:
             setSFSymbol(iconName: "stop.fill", size: 25, tintColor: .systemBackground, backgroundColor: .label)
         case .pause:
             setSFSymbol(iconName: "pause.fill", size: 25, tintColor: .systemBackground, backgroundColor: .label)
+            setTitleColor(UIColor(named: "accent2"), for: .normal)
         case .resume:
-            setSFSymbol(iconName: "play.fill", size: 25, tintColor: .label, backgroundColor: #colorLiteral(red: 0.9763557315, green: 0.9324046969, blue: 0, alpha: 1))
+            setSFSymbol(iconName: "play.fill",
+                        size: 25,
+                        tintColor: .label,
+                        backgroundColor: UIColor(named: "brcYellow")!)
+        case .locate:
+            setSFSymbol(iconName: "location.fill", size: 25, tintColor: .systemBackground, backgroundColor: .label)
+        case .exit:
+            setSFSymbol(iconName: "xmark", size: 25, tintColor: .systemBackground, backgroundColor: .label)
         }
-
-        setTitleColor(.label, for: .normal)
-        titleLabel?.font = UIFont.boldSystemFont(ofSize: 25)
-        imageView?.contentMode = .scaleAspectFill
     }
 
     override func layoutSubviews() {

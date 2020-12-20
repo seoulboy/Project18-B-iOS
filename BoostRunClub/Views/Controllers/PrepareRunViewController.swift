@@ -33,9 +33,9 @@ final class PrepareRunViewController: UIViewController {
         guard let viewModel = viewModel else { return }
         viewModel.outputs.userLocation
             .receive(on: DispatchQueue.main)
-            .sink { coordinate in
+            .sink { [weak self] coordinate in
                 let viewRegion = MKCoordinateRegion(center: coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
-                self.mapView.setRegion(viewRegion, animated: false)
+                self?.mapView.setRegion(viewRegion, animated: false)
             }
             .store(in: &cancellables)
 
@@ -74,12 +74,16 @@ final class PrepareRunViewController: UIViewController {
 
         viewModel.outputs.countDownAnimation
             .receive(on: DispatchQueue.main)
-            .sink { self.countDownAnimation() }
+            .sink { [weak self] in self?.countDownAnimation() }
             .store(in: &cancellables)
 
         goalValueView.tapAction = { [weak viewModel] in
             viewModel?.inputs.didTapGoalValueButton()
         }
+    }
+
+    deinit {
+        print("[Memory \(Date())] 🍎ViewController🍏 \(Self.self) deallocated.")
     }
 }
 
@@ -88,7 +92,6 @@ final class PrepareRunViewController: UIViewController {
 extension PrepareRunViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        configureNavigationItems()
         configureLayout()
         bindViewModel()
     }
@@ -103,13 +106,19 @@ extension PrepareRunViewController {
         setGoalTypeButton.layer.shadowOffset = .zero
         setGoalTypeButton.layer.shadowOpacity = 0.5
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        configureNavigationItems()
+    }
 }
 
 // MARK: - Actions
 
 extension PrepareRunViewController {
     @objc
-    func showProfileViewController() {
+    func showProfileViewController(sender _: UIBarButtonItem) {
+        print("showprofile view controller")
         viewModel?.inputs.didTapShowProfileButton()
     }
 
@@ -121,6 +130,22 @@ extension PrepareRunViewController {
     @objc
     func didTapSetGoalTypeButton() {
         viewModel?.inputs.didTapSetGoalButton()
+        view.notificationFeedback()
+        setGoalTypeButton.transform = .identity
+    }
+
+    @objc
+    func didTouchDownSetGoalTypeButton(_ button: UIButton) {
+        UIView.animate(withDuration: 0.3) {
+            button.transform = button.transform.scaledBy(x: 0.9, y: 0.9)
+        }
+    }
+
+    @objc
+    func didTouchUpOutsideSetGoalTypeButton(_ button: UIButton) {
+        UIView.animate(withDuration: 0.3) {
+            button.transform = .identity
+        }
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -170,8 +195,8 @@ extension PrepareRunViewController {
 
 extension PrepareRunViewController {
     enum LayoutConstant {
-        static let startButtonDiameter = CGFloat(100)
-        static let setGoalWidth = CGFloat(90)
+        static let startButtonDiameter = CGFloat(115)
+        static let setGoalWidth = CGFloat(100)
         static let setGoalHeight = CGFloat(40)
     }
 }
@@ -182,6 +207,10 @@ extension PrepareRunViewController {
     private func makeMapView() -> MKMapView {
         let view = MKMapView()
         view.showsUserLocation = true
+        view.setRegion(MKCoordinateRegion(center: view.userLocation.coordinate,
+                                          latitudinalMeters: 500,
+                                          longitudinalMeters: 500),
+                       animated: false)
         view.mapType = MKMapType.standard
         view.userTrackingMode = MKUserTrackingMode.follow
         view.isUserInteractionEnabled = false
@@ -208,19 +237,17 @@ extension PrepareRunViewController {
         button.setTitleColor(.label, for: .normal)
         button.backgroundColor = .systemBackground
         button.setTitle("목표설정", for: .normal)
-        button.titleLabel?.font = button.titleLabel?.font.withSize(12)
+        button.titleLabel?.font = button.titleLabel?.font.withSize(14)
         button.layer.cornerRadius = LayoutConstant.setGoalHeight / 2
         button.addTarget(self, action: #selector(didTapSetGoalTypeButton), for: .touchUpInside)
+        button.addTarget(self, action: #selector(didTouchDownSetGoalTypeButton), for: .touchDown)
+        button.addTarget(self, action: #selector(didTouchUpOutsideSetGoalTypeButton), for: .touchUpOutside)
+
         return button
     }
 
     private func makeStartButton() -> UIButton {
         let button = CircleButton(with: .start)
-//        button.setTitleColor(.label, for: .normal)
-//        button.backgroundColor = #colorLiteral(red: 0.9763557315, green: 0.9324046969, blue: 0, alpha: 1)
-//        button.setTitle("시작", for: .normal)
-//        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 25)
-//        button.layer.cornerRadius = LayoutConstant.startButtonDiameter / 2
         button.addTarget(self, action: #selector(didTapStartButton), for: .touchUpInside)
 
         return button
@@ -236,14 +263,13 @@ extension PrepareRunViewController {
         navigationItem.title = "러닝"
         navigationController?.navigationBar.prefersLargeTitles = true
 
-        let profileItem = UIBarButtonItem(
-            image: UIImage(systemName: "person.circle.fill"),
-            style: .plain,
-            target: self,
-            action: #selector(showProfileViewController)
-        )
-
-        navigationItem.setLeftBarButton(profileItem, animated: true)
+        let profileItem = UIBarButtonItem.makeProfileButton()
+        if let profileButton = profileItem.customView as? UIButton {
+            profileButton.addTarget(self,
+                                    action: #selector(showProfileViewController(sender:)),
+                                    for: .touchUpInside)
+        }
+        navigationItem.setLeftBarButton(profileItem, animated: false)
     }
 
     private func configureLayout() {
@@ -260,7 +286,7 @@ extension PrepareRunViewController {
         view.addSubview(setGoalTypeButton)
         setGoalTypeButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            setGoalTypeButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
+            setGoalTypeButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
             setGoalTypeButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             setGoalTypeButton.widthAnchor.constraint(equalToConstant: LayoutConstant.setGoalWidth),
             setGoalTypeButton.heightAnchor.constraint(equalToConstant: LayoutConstant.setGoalHeight),
@@ -269,7 +295,7 @@ extension PrepareRunViewController {
         view.addSubview(startButton)
         startButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            startButton.bottomAnchor.constraint(equalTo: setGoalTypeButton.topAnchor, constant: -10),
+            startButton.bottomAnchor.constraint(equalTo: setGoalTypeButton.topAnchor, constant: -12),
             startButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             startButton.heightAnchor.constraint(equalToConstant: LayoutConstant.startButtonDiameter),
             startButton.widthAnchor.constraint(equalTo: startButton.heightAnchor, multiplier: 1),

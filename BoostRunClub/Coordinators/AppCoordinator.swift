@@ -8,60 +8,60 @@
 import Combine
 import UIKit
 
-protocol AppCoordinatorProtocol {
-    func showLoginFlow()
-    func showMainFlow()
-    func showRunningScene(goalType: GoalType, goalValue: String)
-}
-
-final class AppCoordinator: BasicCoordinator, AppCoordinatorProtocol {
-    required init(navigationController: UINavigationController, factory: Factory) {
-        super.init(navigationController: navigationController, factory: factory)
-
-        NotificationCenter.default
-            .publisher(for: .showRunningScene)
-            .sink { [weak self] notification in
-                guard
-                    let self = self,
-                    let goalType = notification.userInfo?["goalType"] as? GoalType,
-                    let goalValue = notification.userInfo?["goalValue"] as? String
-                else { return }
-
-                self.clear()
-                self.showRunningScene(goalType: goalType, goalValue: goalValue)
-            }.store(in: &cancellables)
-
-        NotificationCenter.default
-            .publisher(for: .showPrepareRunningScene)
-            .sink { [weak self] _ in
-                guard
-                    let self = self
-                else { return }
-
-                self.clear()
-                self.showMainFlow()
-            }.store(in: &cancellables)
-    }
-
+final class AppCoordinator: BasicCoordinator<Void> {
     override func start() {
-        showMainFlow()
-    }
-
-    func showLoginFlow() {
-        let loginCoordinator = LoginCoordinator(navigationController: navigationController, factory: factory)
-        childCoordinators.append(loginCoordinator)
-        loginCoordinator.start()
+        return showMainFlow()
     }
 
     func showMainFlow() {
-        let mainTabBarCoordinator = MainTabBarCoordinator(navigationController: navigationController, factory: factory)
-        childCoordinators.append(mainTabBarCoordinator)
-        mainTabBarCoordinator.start()
+        let mainTabBarCoordinator = MainTabBarCoordinator(navigationController: navigationController)
+
+        let uuid = mainTabBarCoordinator.identifier
+        closeSubscription[uuid] = coordinate(coordinator: mainTabBarCoordinator)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                switch $0 {
+                case let .running(info):
+                    self?.showRunningScene(goalType: info.type, goalValue: info.value)
+                }
+                self?.release(coordinator: mainTabBarCoordinator)
+            }
     }
 
-    func showRunningScene(goalType _: GoalType, goalValue _: String) {
-        let runningPageCoordinator = RunningPageCoordinator(navigationController: navigationController, factory: factory)
-        childCoordinators.append(runningPageCoordinator)
-        runningPageCoordinator.start()
+    func showActivityDetail(activity: Activity, detail: ActivityDetail) {
+        let mainTabBarCoordinator = MainTabBarCoordinator(navigationController: navigationController)
+        mainTabBarCoordinator.start(activity: activity, detail: detail)
+
+        let uuid = mainTabBarCoordinator.identifier
+        closeSubscription[uuid] = mainTabBarCoordinator.closeSignal
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                switch $0 {
+                case let .running(info):
+                    self?.showRunningScene(goalType: info.type, goalValue: info.value)
+                }
+                self?.release(coordinator: mainTabBarCoordinator)
+            }
+    }
+
+    func showRunningScene(goalType: GoalType, goalValue: String) {
+        let goalInfo = GoalInfo(type: goalType, value: goalValue)
+        let runningPageCoordinator = RunningPageCoordinator(
+            navigationController: navigationController,
+            goalInfo: goalInfo
+        )
+
+        let uuid = runningPageCoordinator.identifier
+        closeSubscription[uuid] = coordinate(coordinator: runningPageCoordinator)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                switch $0 {
+                case let .activityDetail(activity, detail):
+                    self?.showActivityDetail(activity: activity, detail: detail)
+                case .prepareRun:
+                    self?.showMainFlow()
+                }
+                self?.release(coordinator: runningPageCoordinator)
+            }
     }
 }

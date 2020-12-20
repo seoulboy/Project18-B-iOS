@@ -28,6 +28,10 @@ class GoalTypeViewModel: GoalTypeViewModelInputs, GoalTypeViewModelOutputs {
         goalTypeObservable = CurrentValueSubject<GoalType, Never>(goalType)
     }
 
+    deinit {
+        print("[Memory \(Date())] 🌙ViewModel⭐️ \(Self.self) deallocated.")
+    }
+
     // MARK: Inputs
 
     func didTapBackgroundView() {

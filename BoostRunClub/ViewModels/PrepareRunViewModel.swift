@@ -8,7 +8,7 @@
 import Combine
 import CoreLocation
 import Foundation
-// Running -> 일시정지 -> 정지 -> 파란색 인디케이터가 사라짐
+
 protocol PrepareRunViewModelTypes: AnyObject {
     var inputs: PrepareRunViewModelInputs { get }
     var outputs: PrepareRunViewModelOutputs { get }
@@ -27,13 +27,15 @@ protocol PrepareRunViewModelInputs {
 protocol PrepareRunViewModelOutputs {
     var userLocation: PassthroughSubject<CLLocationCoordinate2D, Never> { get }
     var goalTypeObservable: CurrentValueSubject<GoalType, Never> { get }
-    var goalValueObservable: CurrentValueSubject<String, Never> { get } // TODO: - GoalType/value observable을 goalInfo로 바꿀지 생각해보기
+    // TODO: - GoalType/value observable을 goalInfo로 바꿀지 생각해보기
+    var goalValueObservable: CurrentValueSubject<String, Never> { get }
     var goalValueSetupClosed: PassthroughSubject<Void, Never> { get }
     var goalTypeSetupClosed: PassthroughSubject<Void, Never> { get }
     var showGoalTypeActionSheetSignal: PassthroughSubject<GoalType, Never> { get }
     var showGoalValueSetupSceneSignal: PassthroughSubject<GoalInfo, Never> { get }
     var showRunningSceneSignal: PassthroughSubject<GoalInfo, Never> { get }
     var countDownAnimation: PassthroughSubject<Void, Never> { get }
+    var showProfileSignal: PassthroughSubject<Void, Never> { get }
 }
 
 class PrepareRunViewModel: PrepareRunViewModelInputs, PrepareRunViewModelOutputs {
@@ -42,8 +44,8 @@ class PrepareRunViewModel: PrepareRunViewModelInputs, PrepareRunViewModelOutputs
     var cancellables = Set<AnyCancellable>()
     private var goalInfo: GoalInfo {
         GoalInfo(
-            goalType: goalTypeObservable.value,
-            goalValue: goalValueObservable.value
+            type: goalTypeObservable.value,
+            value: goalValueObservable.value
         )
     }
 
@@ -51,13 +53,19 @@ class PrepareRunViewModel: PrepareRunViewModelInputs, PrepareRunViewModelOutputs
         self.locationProvider = locationProvider
         locationProvider.locationSubject
             .compactMap { $0.coordinate }
-            .sink { self.userLocation.send($0) }
+            .sink { [weak self] in self?.userLocation.send($0) }
             .store(in: &cancellables)
+    }
+
+    deinit {
+        print("[Memory \(Date())] 🌙ViewModel⭐️ \(Self.self) deallocated.")
     }
 
     // MARK: Inputs
 
-    func didTapShowProfileButton() {}
+    func didTapShowProfileButton() {
+        showProfileSignal.send()
+    }
 
     func didTapSetGoalButton() {
         showGoalTypeActionSheetSignal.send(goalTypeObservable.value)
@@ -106,6 +114,7 @@ class PrepareRunViewModel: PrepareRunViewModelInputs, PrepareRunViewModelOutputs
     var showGoalTypeActionSheetSignal = PassthroughSubject<GoalType, Never>()
     var showGoalValueSetupSceneSignal = PassthroughSubject<GoalInfo, Never>()
     var showRunningSceneSignal = PassthroughSubject<GoalInfo, Never>()
+    var showProfileSignal = PassthroughSubject<Void, Never>()
 }
 
 // MARK: - Types

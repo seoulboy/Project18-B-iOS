@@ -42,11 +42,9 @@ enum GoalType: Int {
             return ""
         }
     }
-
-    // TODO: 생각해보기..
 }
 
 struct GoalInfo: Equatable {
-    let goalType: GoalType
-    let goalValue: String
+    let type: GoalType
+    let value: String
 }

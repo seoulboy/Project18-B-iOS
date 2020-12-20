@@ -16,7 +16,6 @@ protocol LocationProvidable {
 }
 
 class LocationProvider: NSObject, LocationProvidable {
-//    static var shared = LocationProvider()
     let locationManager: CLLocationManager
     private(set) var locationSubject = PassthroughSubject<CLLocation, Never>()
 
@@ -37,12 +36,12 @@ class LocationProvider: NSObject, LocationProvidable {
 
     func startBackgroundTask() {
         locationManager.allowsBackgroundLocationUpdates = true
-//        locationManager.startUpdatingLocation()
+        locationManager.pausesLocationUpdatesAutomatically = false
     }
 
     func stopBackgroundTask() {
-//        locationManager.stopUpdatingLocation()
         locationManager.allowsBackgroundLocationUpdates = false
+        locationManager.pausesLocationUpdatesAutomatically = true
     }
 }
 
@@ -50,7 +49,12 @@ class LocationProvider: NSObject, LocationProvidable {
 
 extension LocationProvider: CLLocationManagerDelegate {
     func locationManager(_: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
+        guard let location = locations.last,
+              location.horizontalAccuracy.sign == .plus,
+//              location.verticalAccuracy.sign == .plus,
+              location.speedAccuracy.sign == .plus,
+              location.courseAccuracy.sign == .plus
+        else { return }
 
         locationSubject.send(location)
     }

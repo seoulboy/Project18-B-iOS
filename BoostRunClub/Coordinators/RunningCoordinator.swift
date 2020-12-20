@@ -8,30 +8,15 @@
 import Combine
 import UIKit
 
-protocol RunningCoordinatorProtocol {
-    func showRunningInfoScene()
-    func showPausedRunningScene()
+enum RunningCoordinationResult {
+    case prepareRun
+    case activityDetail(activity: Activity, detail: ActivityDetail)
 }
 
-final class RunningCoordinator: BasicCoordinator, RunningCoordinatorProtocol {
-    required init(navigationController: UINavigationController, factory: Factory) {
-        super.init(navigationController: navigationController, factory: factory)
-
-        NotificationCenter.default
-            .publisher(for: .showRunningInfoScene)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.showRunningInfoScene()
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default
-            .publisher(for: .showPausedRunningScene)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.showPausedRunningScene()
-            }
-            .store(in: &cancellables)
+final class RunningCoordinator: BasicCoordinator<RunningCoordinationResult> {
+    override init(navigationController: UINavigationController) {
+        super.init(navigationController: navigationController)
+        navigationController.pushViewController(UIViewController(), animated: false)
     }
 
     override func start() {
@@ -39,14 +24,38 @@ final class RunningCoordinator: BasicCoordinator, RunningCoordinatorProtocol {
     }
 
     func showRunningInfoScene() {
-        let runInfoCoordinator = RunningInfoCoordinator(navigationController: navigationController, factory: factory)
-        childCoordinators.append(runInfoCoordinator)
-        runInfoCoordinator.start()
+        let runInfoCoordinator = RunningInfoCoordinator(navigationController: navigationController)
+
+        let uuid = runInfoCoordinator.identifier
+        closeSubscription[uuid] = coordinate(coordinator: runInfoCoordinator)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                switch $0 {
+                case .pausedRun:
+                    self?.showPausedRunningScene()
+                }
+                self?.release(coordinator: runInfoCoordinator)
+            }
     }
 
     func showPausedRunningScene() {
-        let pausedRunningCoordinator = PausedRunningCoordinator(navigationController: navigationController, factory: factory)
-        childCoordinators.append(pausedRunningCoordinator)
-        pausedRunningCoordinator.start()
+        let pausedRunningCoordinator = PausedRunningCoordinator(navigationController: navigationController)
+
+        let uuid = pausedRunningCoordinator.identifier
+        closeSubscription[uuid] = coordinate(coordinator: pausedRunningCoordinator)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                switch $0 {
+                case .runInfo:
+                    self?.showRunningInfoScene()
+                case .prepareRun:
+                    let result = RunningCoordinationResult.prepareRun
+                    self?.closeSignal.send(result)
+                case let .activityDetail(activity, detail):
+                    let result = RunningCoordinationResult.activityDetail(activity: activity, detail: detail)
+                    self?.closeSignal.send(result)
+                }
+                self?.release(coordinator: pausedRunningCoordinator)
+            }
     }
 }

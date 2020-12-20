@@ -12,7 +12,7 @@ final class RunDataView: UIStackView {
         case main, sub
     }
 
-    private lazy var valueLabel = makeValueLabel()
+    lazy var valueLabel = makeValueLabel()
     private lazy var descriptionLabel = maekDescriptionLabel()
     let style: Style
     var tapAction: (() -> Void)?
@@ -57,30 +57,6 @@ extension RunDataView {
 // MARK: - Configure
 
 extension RunDataView {
-    private func makeValueLabel() -> UILabel {
-        let label: UILabel
-        switch style {
-        case .main:
-            label = NikeLabel()
-        case .sub:
-            label = UILabel()
-            label.font = UIFont.boldSystemFont(ofSize: 17)
-        }
-        label.textColor = .black
-        label.textAlignment = .center
-        label.text = "00:00"
-        return label
-    }
-
-    private func maekDescriptionLabel() -> UILabel {
-        let label = UILabel()
-        label.textColor = UIColor.systemGray2.withAlphaComponent(0.7)
-        label.textAlignment = .center
-        label.font = UIFont.boldSystemFont(ofSize: 17)
-        label.text = "시간"
-        return label
-    }
-
     private func commonInit() {
         distribution = .equalSpacing
         alignment = .center
@@ -101,5 +77,29 @@ extension RunDataView {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(execute))
 
         addGestureRecognizer(tapGesture)
+    }
+
+    private func makeValueLabel() -> UILabel {
+        let label: UILabel
+        switch style {
+        case .main:
+            label = NikeLabel()
+        case .sub:
+            label = UILabel()
+            label.font = UIFont.boldSystemFont(ofSize: 17)
+        }
+        label.textColor = UIColor(named: "accent2")
+        label.textAlignment = .center
+        label.text = "00:00"
+        return label
+    }
+
+    private func maekDescriptionLabel() -> UILabel {
+        let label = UILabel()
+        label.textColor = UIColor.systemGray2.withAlphaComponent(0.7)
+        label.textAlignment = .center
+        label.font = UIFont.boldSystemFont(ofSize: 17)
+        label.text = "시간"
+        return label
     }
 }

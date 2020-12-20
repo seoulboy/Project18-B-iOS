@@ -33,22 +33,39 @@ final class RunningInfoViewController: UIViewController {
     private func bindViewModel() {
         guard let viewModel = viewModel else { return }
         runDataViews.enumerated().forEach { idx, view in
-            view.tapAction = { [weak viewModel] in
-                viewModel?.inputs.didTapRunData(index: idx)
+            view.tapAction = { [weak self] in
+                self?.viewModel?.inputs.didTapRunData(index: idx)
+                view.notificationFeedback()
             }
 
             viewModel.outputs.runningInfoObservables[idx]
+                .receive(on: RunLoop.main)
                 .sink { [weak view] runningInfo in
-                    print(runningInfo)
                     view?.setValue(value: runningInfo.value)
                     view?.setType(type: runningInfo.type.name)
                 }
                 .store(in: &cancellables)
-
-            viewModel.outputs.runningInfoTapAnimations[idx]
-                .sink { _ in view.startBounceAnimation() }
-                .store(in: &cancellables)
         }
+
+        viewModel.outputs.runningInfoTapAnimation
+            .receive(on: RunLoop.main)
+            .filter { [weak self] in $0 < self?.runDataViews.count ?? 0 }
+            .sink { [weak self] in self?.runDataViews[$0].startBounceAnimation() }
+            .store(in: &cancellables)
+
+        viewModel.outputs.initialAnimation
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.startInitialAnimation() }
+            .store(in: &cancellables)
+
+        viewModel.outputs.resumeAnimation
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.startResumeAnimation() }
+            .store(in: &cancellables)
+    }
+
+    deinit {
+        print("[Memory \(Date())] 🍎ViewController🍏 \(Self.self) deallocated.")
     }
 }
 
@@ -57,9 +74,14 @@ final class RunningInfoViewController: UIViewController {
 extension RunningInfoViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = #colorLiteral(red: 0.9763557315, green: 0.9324046969, blue: 0, alpha: 1)
+        view.backgroundColor = UIColor(named: "accent")
         configureLayout()
         bindViewModel()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        viewModel?.inputs.viewDidAppear()
     }
 }
 
@@ -69,6 +91,31 @@ extension RunningInfoViewController {
     @objc
     func didTapPauseButton() {
         viewModel?.inputs.didTapPauseButton()
+        view.notificationFeedback()
+    }
+
+    private func startInitialAnimation() {
+        view.subviews.forEach {
+            $0.transform = $0.transform.scaledBy(x: 0.5, y: 0.5)
+            $0.alpha = 0
+        }
+        UIView.animate(withDuration: 0.5) {
+            self.view.subviews.forEach {
+                $0.transform = .identity
+                $0.alpha = 1
+            }
+        }
+    }
+
+    private func startResumeAnimation() {
+        view.subviews.forEach { $0.alpha = 1 }
+        let targetView = runDataViews[0]
+        targetView.alpha = 0
+        targetView.transform = targetView.transform.scaledBy(x: 0.9, y: 0.9)
+        UIView.animate(withDuration: 0.2) {
+            targetView.alpha = 1
+            targetView.transform = .identity
+        }
     }
 }
 
@@ -116,5 +163,9 @@ extension RunningInfoViewController {
             pauseButton.heightAnchor.constraint(equalToConstant: 100),
             pauseButton.widthAnchor.constraint(equalTo: pauseButton.heightAnchor, multiplier: 1),
         ])
+
+        view.subviews.forEach {
+            $0.alpha = 0
+        }
     }
 }

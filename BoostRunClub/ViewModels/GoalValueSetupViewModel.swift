@@ -36,6 +36,10 @@ class GoalValueSetupViewModel: GoalValueSetupViewModelInputs, GoalValueSetupView
         goalValueObservable = CurrentValueSubject<String, Never>(goalValue)
     }
 
+    deinit {
+        print("[Memory \(Date())] 🌙ViewModel⭐️ \(Self.self) deallocated.")
+    }
+
     // MARK: Inputs
 
     func didInputNumber(_ number: String) {

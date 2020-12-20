@@ -62,11 +62,10 @@ class PrepareRunViewModelTest: XCTestCase {
                 prepareVM.goalTypeSetupClosed
             )
             .sink {
-                print($0)
                 if $0.0 == goalType,
                    $0.1 == goalType.initialValue
                 {
-                    results.append(GoalInfo(goalType: $0.0, goalValue: $0.1))
+                    results.append(GoalInfo(type: $0.0, value: $0.1))
                     receivedSignal.fulfill()
                 }
             }
@@ -77,7 +76,7 @@ class PrepareRunViewModelTest: XCTestCase {
 
         XCTAssertEqual(allCases.count, results.count)
         allCases.enumerated().forEach { index, goalType in
-            XCTAssertEqual(GoalInfo(goalType: goalType, goalValue: goalType.initialValue), results[index])
+            XCTAssertEqual(GoalInfo(type: goalType, value: goalType.initialValue), results[index])
         }
     }
 
@@ -106,9 +105,8 @@ class PrepareRunViewModelTest: XCTestCase {
             receivedSignal.fulfill()
         }.store(in: &cancellables)
 
-        prepareVM.goalValueObservable.dropFirst().sink {
-            print($0)
-            XCTFail()
+        prepareVM.goalValueObservable.dropFirst().sink { _ in
+            XCTFail("초기화 값 이외의 다른 값이 발생했습니다.")
         }.store(in: &cancellables)
 
         prepareVM.didChangeGoalValue(goalValue)

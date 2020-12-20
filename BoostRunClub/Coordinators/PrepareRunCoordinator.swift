@@ -8,15 +8,16 @@
 import Combine
 import UIKit
 
-protocol PrepareRunCoordinatorProtocol {
-    func showGoalTypeActionSheet(goalType: GoalType) -> AnyPublisher<GoalType, Never>
-    func showGoalValueSetupViewController(goalInfo: GoalInfo) -> AnyPublisher<String?, Never>
-    func showRunningScene(goalInfo: GoalInfo)
+enum PrepareRunCoordinationResult {
+    case run(GoalInfo), profile
 }
 
-final class PrepareRunCoordinator: BasicCoordinator, PrepareRunCoordinatorProtocol {
-    required init(navigationController: UINavigationController, factory: Factory) {
-        super.init(navigationController: navigationController, factory: factory)
+final class PrepareRunCoordinator: BasicCoordinator<PrepareRunCoordinationResult> {
+    let factory: PrepareRunSceneFactory
+
+    init(navigationController: UINavigationController, factory: PrepareRunSceneFactory = DependencyFactory.shared) {
+        self.factory = factory
+        super.init(navigationController: navigationController)
         navigationController.view.backgroundColor = .systemBackground
         navigationController.setNavigationBarHidden(false, animated: true)
     }
@@ -30,19 +31,32 @@ final class PrepareRunCoordinator: BasicCoordinator, PrepareRunCoordinatorProtoc
 
         prepareRunVM.outputs.showRunningSceneSignal
             .receive(on: RunLoop.main)
-            .sink { self.showRunningScene(goalInfo: $0) }
+            .sink { [weak self] in
+                let result = PrepareRunCoordinationResult.run($0)
+                self?.closeSignal.send(result)
+            }
             .store(in: &cancellables)
 
         prepareRunVM.outputs.showGoalTypeActionSheetSignal
             .receive(on: RunLoop.main)
-            .flatMap { self.showGoalTypeActionSheet(goalType: $0) }
+            .compactMap { [weak self] in self?.showGoalTypeActionSheet(goalType: $0) }
+            .flatMap { $0 }
             .sink { prepareRunVM.inputs.didChangeGoalType($0) }
             .store(in: &cancellables)
 
         prepareRunVM.outputs.showGoalValueSetupSceneSignal
             .receive(on: RunLoop.main)
-            .flatMap { self.showGoalValueSetupViewController(goalInfo: $0) }
+            .compactMap { [weak self] in self?.showGoalValueSetupViewController(goalInfo: $0) }
+            .flatMap { $0 }
             .sink { prepareRunVM.inputs.didChangeGoalValue($0) }
+            .store(in: &cancellables)
+
+        prepareRunVM.outputs.showProfileSignal
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                let result = PrepareRunCoordinationResult.profile
+                self?.closeSignal.send(result)
+            }
             .store(in: &cancellables)
 
         let prepareRunVC = factory.makePrepareRunVC(with: prepareRunVM)
@@ -57,40 +71,24 @@ final class PrepareRunCoordinator: BasicCoordinator, PrepareRunCoordinatorProtoc
         navigationController.present(goalTypeVC, animated: false, completion: nil)
 
         return goalTypeVM.closeSheetSignal.receive(on: RunLoop.main)
-            .map {
-                goalTypeVC.closeWithAnimation()
+            .map { [weak goalTypeVC] in
+                goalTypeVC?.closeWithAnimation()
                 return $0
             }.eraseToAnyPublisher()
     }
 
     func showGoalValueSetupViewController(goalInfo: GoalInfo) -> AnyPublisher<String?, Never> {
         // TODO: goalType, goalValue -> GoalInfo 타입으로 변경
-        let goalValueSetupVM = GoalValueSetupViewModel(goalType: goalInfo.goalType, goalValue: goalInfo.goalValue)
+        let goalValueSetupVM = GoalValueSetupViewModel(goalType: goalInfo.type, goalValue: goalInfo.value)
         let goalValueSetupVC = GoalValueSetupViewController(with: goalValueSetupVM)
         navigationController.pushViewController(goalValueSetupVC, animated: false)
 
         return goalValueSetupVM.closeSheetSignal
             .receive(on: RunLoop.main)
-            .map {
-                goalValueSetupVC.navigationController?.popViewController(animated: false)
+            .map { [weak goalValueSetupVC] in
+                goalValueSetupVC?.navigationController?.popViewController(animated: false)
                 return $0
             }
             .eraseToAnyPublisher()
-    }
-
-    func showRunningScene(goalInfo: GoalInfo) {
-        // TODO: goalType, goalValue -> GoalInfo 타입으로 변경
-        NotificationCenter.default.post(
-            name: .showRunningScene,
-            object: self,
-            userInfo: [
-                "goalType": goalInfo.goalType,
-                "goalValue": goalInfo.goalValue,
-            ]
-        )
-    }
-
-    deinit {
-        print("finished \(self)")
     }
 }
