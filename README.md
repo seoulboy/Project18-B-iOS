@@ -96,10 +96,10 @@
 <details>
 <summary>👈 더보기</summary>
 
-| <img src="https://user-images.githubusercontent.com/34773827/102692550-6dffca00-4257-11eb-9c61-6cf952b653e4.png" width="210"><img src="https://user-images.githubusercontent.com/34773827/102692544-60e2db00-4257-11eb-81ab-270504a2d629.png" width="210"> | <img src="https://user-images.githubusercontent.com/34773827/102692645-08f8a400-4258-11eb-9218-e8cd96fbec45.png" width="210"><img src="https://user-images.githubusercontent.com/34773827/102692641-01d19600-4258-11eb-9de6-9a330ad203f5.png" width="210"> |
+| <img src="https://user-images.githubusercontent.com/34773827/102692550-6dffca00-4257-11eb-9c61-6cf952b653e4.png" width="200"><img src="https://user-images.githubusercontent.com/34773827/102692544-60e2db00-4257-11eb-81ab-270504a2d629.png" width="200"> | <img src="https://user-images.githubusercontent.com/34773827/102692645-08f8a400-4258-11eb-9218-e8cd96fbec45.png" width="200"><img src="https://user-images.githubusercontent.com/34773827/102692641-01d19600-4258-11eb-9de6-9a330ad203f5.png" width="200"> |
 | :----------------------------------------------------------: | :----------------------------------------------------------: |
 |                        `러닝 일시정지`                         |                           `활동`                            |
-| <img src="https://user-images.githubusercontent.com/34773827/102692613-cc2cad00-4257-11eb-98ff-f579c52fd447.png" width="210"><img src="https://user-images.githubusercontent.com/34773827/102692598-b7e8b000-4257-11eb-8dc6-3b2de619a89c.png" width="210"> | <img src="https://user-images.githubusercontent.com/34773827/102692632-ec5c6c00-4257-11eb-9275-89e7d5899a5e.png" width="210"><img src="https://user-images.githubusercontent.com/34773827/102692633-f54d3d80-4257-11eb-91a5-126f3dc2535e.png" width="210"> |
+| <img src="https://user-images.githubusercontent.com/34773827/102692613-cc2cad00-4257-11eb-98ff-f579c52fd447.png" width="200"><img src="https://user-images.githubusercontent.com/34773827/102692598-b7e8b000-4257-11eb-8dc6-3b2de619a89c.png" width="200"> | <img src="https://user-images.githubusercontent.com/34773827/102692632-ec5c6c00-4257-11eb-9275-89e7d5899a5e.png" width="200"><img src="https://user-images.githubusercontent.com/34773827/102692633-f54d3d80-4257-11eb-91a5-126f3dc2535e.png" width="200"> |
 |                           `활동상세`                           |                           `구간상세`                           |
 </details>
 
