@@ -89,7 +89,7 @@
 - `AVFoundation` framework의 `AVSpeechSynthesizer`를 사용하여 `음성 피드백`을 제공합니다.
 - 러닝 시작/일시정지/러닝, 목표 달성 시에 사용자에게 음성으로 알려주어 사용성을 높입니다.
 
-### 다크모드
+### Dark Mode
 
 <img src="https://user-images.githubusercontent.com/34773827/102692748-c8e5f100-4258-11eb-9eb7-0846808ec74c.png" width="225"><img src="https://user-images.githubusercontent.com/34773827/102692750-d0a59580-4258-11eb-9bf8-24220172c05d.png" width="225">
 
